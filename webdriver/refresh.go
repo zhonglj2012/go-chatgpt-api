@@ -8,7 +8,7 @@ import (
 )
 
 //goland:noinspection GoUnhandledErrorResult
-func Refresh() {
+func refresh() {
 	if err := WebDriver.Refresh(); err != nil {
 		errorMessage := err.Error()
 		if strings.HasSuffix(errorMessage, "connect: connection refused") {
@@ -19,15 +19,6 @@ func Refresh() {
 		}
 	} else {
 		HandleCaptcha(WebDriver)
-	}
-}
-
-//goland:noinspection GoUnhandledErrorResult
-func NewSessionAndRefresh() {
-	if _, err := WebDriver.PageSource(); err != nil {
-		if err.Error() == "invalid session id: invalid session id" {
-			newRefresh()
-		}
 	}
 }
 

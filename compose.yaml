@@ -1,20 +1,27 @@
 services:
-  go-chatgpt-api:
+  go-chatgpt-api-cookies:
     build: .
-    container_name: go-chatgpt-api
-    image: linweiyuan/go-chatgpt-api
-    ports:
-      - 8080:8080
+    container_name: go-chatgpt-api-cookies
+    image: linweiyuan/go-chatgpt-api:cookies
     environment:
       - GIN_MODE=release
       - CHATGPT_PROXY_SERVER=http://chatgpt-proxy-server:9515
-#      - NETWORK_PROXY_SERVER=http://host:port
-#      - NETWORK_PROXY_SERVER=socks5://host:port
+      - NETWORK_PROXY_SERVER=socks5://chatgpt-proxy-server-warp:65535
     depends_on:
       - chatgpt-proxy-server
+      - chatgpt-proxy-server-warp
     restart: unless-stopped
 
   chatgpt-proxy-server:
     container_name: chatgpt-proxy-server
     image: linweiyuan/chatgpt-proxy-server
+    environment:
+      - LOG_LEVEL=OFF
+    restart: unless-stopped
+
+  chatgpt-proxy-server-warp:
+    container_name: chatgpt-proxy-server-warp
+    image: linweiyuan/chatgpt-proxy-server-warp
+    environment:
+      - LOG_LEVEL=OFF
     restart: unless-stopped
