@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"os"
+	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/linweiyuan/go-chatgpt-api/api/chatgpt"
@@ -15,9 +17,28 @@ func init() {
 	gin.ForceConsoleColor()
 }
 
+var processLock sync.Mutex
+
+func RateLimitMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !processLock.TryLock() {
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error": "Only one message at a time. Please allow any other responses to complete before sending another message, or wait one minute.",
+			})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+
+		processLock.Unlock()
+	}
+}
+
 func main() {
 	router := gin.Default()
 	router.Use(middleware.CheckHeaderMiddleware())
+	router.Use(RateLimitMiddleware())
 
 	// ChatGPT
 	conversationsGroup := router.Group("/conversations")

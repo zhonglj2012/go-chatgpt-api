@@ -3,7 +3,6 @@ package chatgpt
 import (
 	"encoding/json"
 	"io"
-	"os"
 	"strings"
 	"time"
 
@@ -40,7 +39,7 @@ func init() {
 		}
 	}()
 
-	proxyUrl := os.Getenv("GO_CHATGPT_API_PROXY")
+	proxyUrl := "http://127.0.0.1:40000"
 	if proxyUrl == "" {
 		resp, _ := healthCheck()
 		defer resp.Body.Close()

@@ -2,3 +2,4 @@
 .env
 go-chatgpt-api
 undetected_chromedriver
+nohup_go_chatgpt_api.log

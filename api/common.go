@@ -3,7 +3,6 @@ package api
 //goland:noinspection GoSnakeCaseUsage
 import (
 	"bufio"
-	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -27,7 +26,7 @@ func init() {
 	}...)
 
 	//goland:noinspection SpellCheckingInspection
-	proxyUrl := os.Getenv("GO_CHATGPT_API_PROXY")
+	proxyUrl := "http://127.0.0.1:40000"
 	if proxyUrl != "" {
 		err := Client.SetProxy(proxyUrl)
 		if err != nil {

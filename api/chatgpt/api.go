@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gin-gonic/gin"
 	"github.com/linweiyuan/go-chatgpt-api/api"
+	"github.com/linweiyuan/go-chatgpt-api/util/logger"
 
 	http "github.com/bogdanfinn/fhttp"
 )
@@ -44,6 +46,9 @@ func CreateConversation(c *gin.Context) {
 	if request.VariantPurpose == "" {
 		request.VariantPurpose = "none"
 	}
+	request.TrainingDisabled = true
+	logger.Info(request.Model)
+	logger.Info(request.Messages[0].Content.Parts[0])
 
 	jsonBytes, _ := json.Marshal(request)
 	req, _ := http.NewRequest("POST", apiPrefix+"/conversation", bytes.NewBuffer(jsonBytes))
@@ -59,29 +64,22 @@ func CreateConversation(c *gin.Context) {
 
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK || err != nil {
-		switch resp.StatusCode {
-		case http.StatusUnauthorized:
-			c.AbortWithStatusJSON(resp.StatusCode, api.ReturnMessage(conversationErrorMessage401))
-			return
-		case http.StatusForbidden:
-			c.AbortWithStatusJSON(resp.StatusCode, api.ReturnMessage(conversationErrorMessage403))
-			return
-		case http.StatusNotFound:
-			c.AbortWithStatusJSON(resp.StatusCode, api.ReturnMessage(conversationErrorMessage404))
-			return
-		case http.StatusRequestEntityTooLarge:
-			c.AbortWithStatusJSON(resp.StatusCode, api.ReturnMessage(conversationErrorMessage413))
-			return
-		case http.StatusUnprocessableEntity:
-			c.AbortWithStatusJSON(resp.StatusCode, api.ReturnMessage(conversationErrorMessage422))
-			return
-		case http.StatusTooManyRequests:
-			c.AbortWithStatusJSON(resp.StatusCode, api.ReturnMessage(conversationErrorMessage429))
-			return
-		case http.StatusInternalServerError:
-			c.AbortWithStatusJSON(resp.StatusCode, api.ReturnMessage(conversationErrorMessage500))
+		// Check if there was an error with the HTTP request
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
+	
+		// Get the error message from the response body
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+	
+		// Abort with the original error message
+		c.AbortWithStatusJSON(resp.StatusCode, string(body))
+		return
 	}
 
 	api.HandleConversationResponse(c, resp)

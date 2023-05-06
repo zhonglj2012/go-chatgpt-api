@@ -9,6 +9,7 @@ type CreateConversationRequest struct {
 	TimezoneOffsetMin int       `json:"timezone_offset_min"`
 	VariantPurpose    string    `json:"variant_purpose"`
 	ContinueText      string    `json:"continue_text"`
+	TrainingDisabled  bool      `json:"history_and_training_disabled"`
 }
 
 type Message struct {
