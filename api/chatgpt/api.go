@@ -75,6 +75,9 @@ func CreateConversation(c *gin.Context) {
 			idx := strings.Index(bodyString, "_in\":")
 			bodyString = "gpt-4收到的请求过多，请使用gpt-3.5-turbo或在" + bodyString[idx+5:idx+9] + "秒后再试"
 		}
+		if strings.Contains(bodyString, "Only one message at a time.") {
+			bodyString = "请等待其他用户完成请求"
+		}
 		logger.Info(bodyString)
 		c.AbortWithStatusJSON(resp.StatusCode, bodyString)
 		return

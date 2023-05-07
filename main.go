@@ -2,9 +2,7 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"os"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/linweiyuan/go-chatgpt-api/api/chatgpt"
@@ -17,24 +15,9 @@ func init() {
 	gin.ForceConsoleColor()
 }
 
-var processLock sync.Mutex
-
-func RateLimitMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if !processLock.TryLock() {
-			c.JSON(http.StatusTooManyRequests, gin.H{
-				"error": "请等待其他用户完成请求",
-			})
-			c.Abort()
-			return
-		}
-	}
-}
-
 func main() {
 	router := gin.Default()
 	router.Use(middleware.CheckHeaderMiddleware())
-	router.Use(RateLimitMiddleware())
 
 	setupChatGPTAPIs(router)
 
