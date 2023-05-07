@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/linweiyuan/go-chatgpt-api/api/chatgpt"
@@ -13,6 +15,20 @@ import (
 
 func init() {
 	gin.ForceConsoleColor()
+}
+
+var processLock sync.Mutex
+
+func RateLimitMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !processLock.TryLock() {
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error": "请等待其他用户完成请求",
+			})
+			c.Abort()
+			return
+		}
+	}
 }
 
 func main() {

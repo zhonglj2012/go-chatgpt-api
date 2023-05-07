@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"strings"
 
+	http "github.com/bogdanfinn/fhttp"
 	"github.com/gin-gonic/gin"
 	"github.com/linweiyuan/go-chatgpt-api/api"
-
-	http "github.com/bogdanfinn/fhttp"
+	"github.com/linweiyuan/go-chatgpt-api/util/logger"
 )
 
 //goland:noinspection GoUnhandledErrorResult
@@ -42,6 +43,9 @@ func CreateConversation(c *gin.Context) {
 	if request.VariantPurpose == "" {
 		request.VariantPurpose = "none"
 	}
+	request.TrainingDisabled = true
+	logger.Info(request.Model)
+	logger.Info(request.Messages[0].Content.Parts[0])
 
 	jsonBytes, _ := json.Marshal(request)
 	req, _ := http.NewRequest(http.MethodPost, apiPrefix+"/conversation", bytes.NewBuffer(jsonBytes))
@@ -56,13 +60,25 @@ func CreateConversation(c *gin.Context) {
 	}
 
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		responseMap := make(map[string]interface{})
-		json.NewDecoder(resp.Body).Decode(&responseMap)
-		c.AbortWithStatusJSON(resp.StatusCode, responseMap)
+	if resp.StatusCode != http.StatusOK || err != nil {
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		bodyString := string(body)
+		if strings.Contains(bodyString, "You have sent too many messages to the model.") {
+			idx := strings.Index(bodyString, "_in\":")
+			bodyString = "gpt-4收到的请求过多，请使用gpt-3.5-turbo或在" + bodyString[idx+5:idx+9] + "秒后再试"
+		}
+		logger.Info(bodyString)
+		c.AbortWithStatusJSON(resp.StatusCode, bodyString)
 		return
 	}
-
 	api.HandleConversationResponse(c, resp)
 }
 
