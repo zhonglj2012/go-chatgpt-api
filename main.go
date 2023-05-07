@@ -34,6 +34,7 @@ func RateLimitMiddleware() gin.HandlerFunc {
 func main() {
 	router := gin.Default()
 	router.Use(middleware.CheckHeaderMiddleware())
+	router.Use(RateLimitMiddleware())
 
 	setupChatGPTAPIs(router)
 
